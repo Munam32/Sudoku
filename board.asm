@@ -142,17 +142,13 @@ clrscr:
     push es
     push ax
     mov di, 0
-    mov ax, 0xb800
-    mov es, ax
-    nextloc:
-        mov word [es:di], 0x0720
-        add di, 2
-        cmp di, 7200
-        jne nextloc
-        pop ax
-        pop es
-        pop di
-        ret
+    push 0xb800
+    pop es
+    mov cx,4000
+
+    rep stosw
+    ret
+    
 
 c1:
     push bx
