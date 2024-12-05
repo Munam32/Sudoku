@@ -148,7 +148,7 @@ clrscr:
 
     rep stosw
     ret
-    
+
 
 c1:
     push bx
@@ -701,6 +701,8 @@ printBoard:
                         call c9
                         sub ch, 1
                         jmp printRow
+
+                        
 
 printString:
     push bp
