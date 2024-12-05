@@ -29,6 +29,10 @@ m5:db '2. No number can repeat within any row, column or 3x3 box.',0
 m6:db 'Are you ready for the challenge?',0
 m7:db 'Press any key to Start',0
 
+m8: db 'You Lose, restart to play again',0
+m9: db 'End Game!',0
+
+
 cursorIndex: db 1
 cursorPosition: dw 1328
 oldisr: dw 0, 0
@@ -609,6 +613,7 @@ printnum:
        pop  es 
        pop  bp 
        ret  6
+
 printBoard:
    push bp
    mov bp, sp
@@ -859,6 +864,8 @@ display:
    push cx
 
    call clrscr
+   
+   
    mov cx, 5;x
    push cx
    mov cx, 3;y
@@ -891,6 +898,7 @@ display:
    push cx
    mov cx, 3;y
    push cx
+
    push timer
    call printString
 
@@ -985,6 +993,79 @@ displayStartScreen:
 
    pop ax
    ret
+
+
+displayEndScreen:
+    push ax
+    call clrscr
+
+    push 18
+    push 1
+    push 0x0F
+    push line
+    call printWord
+
+    push 35
+    push 2
+    push 0x0B
+    push m9
+    call printWord
+
+    push 18
+    push 3
+    push 0x0F
+    push line
+    call printWord
+
+    push 5
+    push 8
+    push 0x0b
+    push m3
+    call printWord
+
+    push 2
+    push 10
+    push 0x0A
+    push m4
+    call printWord
+
+    push 2
+    push 11
+    push 0x0A
+    push m5
+    call printWord
+
+    push 23
+    push 16
+    push 0x0c
+    push m6
+    call printWord
+
+    push 18
+    push 19
+    push 0x0F
+    push line
+    call printWord
+        
+    push 23
+    push 20
+    push 0x8d
+    push m8
+    call printWord
+        
+        
+    push 18
+    push 21
+    push 0x0F
+    push line
+    call printWord
+
+    mov ah, 0
+    int 0x16
+
+    pop ax
+    ret
+
 
 int9hisr:
 	    push ax                 ; push all regs  
@@ -1171,26 +1252,31 @@ int9hisr:
                pop  ax 
                jmp far [cs:oldisr] 
 
+
+
+
 game:
+xor ax, ax
+mov es, ax
+mov ax, [es:9*4]
+mov [oldisr], ax
+mov ax, [es:9*4+2]
+mov [oldisr+2], ax
+cli
+mov word [es:9*4], int9hisr
+mov [es:9*4+2], cs
+sti
+call displayStartScreen
 
-   xor ax, ax
-   mov es, ax
-   mov ax, [es:9*4]
-   mov [oldisr], ax
-   mov ax, [es:9*4+2]
-   mov [oldisr+2], ax
-   cli
-   mov word [es:9*4], int9hisr
-   mov [es:9*4+2], cs
-   sti
 
-   call displayStartScreen
 
-   start:
-       cmp byte [mistakes], 3
-       jne start
-   call clrscr
-   
-   end:
-       mov ax, 4c00h
-       int 21h
+start:
+cmp byte [mistakes], 3
+jne start
+
+call clrscr
+call displayEndScreen
+
+end:
+    mov ax, 4c00h
+    int 21h
