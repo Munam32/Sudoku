@@ -8,6 +8,8 @@ mistakes: dw 0
 
 timer: db '00:00', 0
 score: db 'Score: 1000', 0
+Hours: dw 0
+Minutes: dw 0
 
 solvedNumbers: db 6, 7, 2, 1, 9, 5, 3, 4, 8, 5, 3, 4, 6, 7, 8, 9, 1, 2, 1, 9, 8, 3, 4, 2, 5, 6, 7, 8, 5, 9, 7, 6, 1, 4, 2, 3, 3, 4, 5, 2, 8, 6, 1, 7, 9, 4, 2, 6, 8, 5, 3, 7, 9, 1, 7, 1, 3, 9, 2, 4, 8, 5, 6, 9, 6, 1, 5, 3, 7, 2, 8, 4, 2, 8, 7, 4, 1, 9, 6, 3, 5
 numbers: db 6, 7, 2, 1, 0, 5, 3, 4, 8, 5, 3, 0, 6, 7, 8, 9, 1, 2, 1, 0, 0, 3, 4, 0, 5, 6, 0, 8, 5, 9, 7, 6, 1, 4, 0, 3, 3, 4, 5, 2, 8, 6, 0, 7, 9, 0, 2, 6, 8, 0, 3, 7, 9, 0, 7, 1, 3, 9, 2, 4, 0, 5, 6, 0, 0, 1, 0, 3, 7, 2, 0, 4, 2, 8, 7, 0, 1, 9, 6, 0, 5
@@ -23,8 +25,8 @@ how5: db 'Third Number: value',0
 line:db '===========================================',0
 m1:db 'Welcome to Sudoku!',0
 m2:db 'Get ready to solve the puzzle!',0
-m3:db  'For better experience go through the rules:',0
-m4:db   '1. Fill the grid as every row, column and 3x3 box contains the digits 1-9.',0
+m3:db 'For better experience go through the rules:',0
+m4:db '1. Fill the grid as every row, column and 3x3 box contains the digits 1-9.',0
 m5:db '2. No number can repeat within any row, column or 3x3 box.',0
 m6:db 'Are you ready for the challenge?',0
 m7:db 'Press any key to Start',0
@@ -32,6 +34,7 @@ m7:db 'Press any key to Start',0
 m8: db 'You Lose, restart to play again',0
 m9: db 'End Game!',0
 
+m10: db 'You Win, restart the game',0
 
 cursorIndex: db 1
 cursorPosition: dw 1328
@@ -792,6 +795,7 @@ printNumbers:
        jz ignoreDisplay
        add al, 0x30
        mov [es:bx+si], ax
+       
        ignoreDisplay:
            inc cx
            add di, 1
@@ -829,21 +833,23 @@ printWord:
    mov di, ax
    mov si, word [bp+4]
    mov ah, byte [bp+6]
-	PrintWordLoop:
-		cmp byte[si],0
+    
+    PrintWordLoop:
+	    cmp byte[si],0
 		je Done
 		mov al,[si]
 		inc	si
 		stosw                
 		jmp PrintWordLoop
-		Done:
-		pop es
-		pop si
-		pop di
-		pop cx
-		pop ax
-		pop bp
-		ret 8
+		
+    Done:
+	pop es
+	pop si
+	pop di
+	pop cx
+	pop ax
+	pop bp
+	ret 8
 
 printCursor:
    push es
@@ -994,8 +1000,7 @@ displayStartScreen:
    pop ax
    ret
 
-
-displayEndScreen:
+displayEndScreenLose:
     push ax
     call clrscr
 
@@ -1066,6 +1071,76 @@ displayEndScreen:
     pop ax
     ret
 
+displayEndScreenWin:
+    push ax
+   call clrscr
+
+   push 18
+	push 1
+	push 0x0F
+	push line
+   call printWord
+
+   push 30
+	push 2
+	push 0x0B
+	push m1
+   call printWord
+
+   push 18
+	push 3
+	push 0x0F
+	push line
+   call printWord
+
+   push 5
+	push 8
+	push 0x0b
+	push m3
+   call printWord
+
+   push 2
+	push 10
+	push 0x0A
+	push m4
+   call printWord
+
+   push 2
+	push 11
+	push 0x0A
+	push m5
+   call printWord
+
+   push 23
+	push 16
+	push 0x0c
+	push m6
+   call printWord
+
+   push 18
+	push 19
+	push 0x0F
+	push line
+	call printWord
+	
+	push 28
+	push 20
+	push 0x8d
+	push m10
+	call printWord
+	
+	
+	push 18
+	push 21
+	push 0x0F
+	push line
+	call printWord
+
+   mov ah, 0
+   int 0x16
+
+   pop ax
+   ret
 
 int9hisr:
 	    push ax                 ; push all regs  
@@ -1155,6 +1230,7 @@ int9hisr:
        call scrollup
        inc byte [currentScrollUp]
        jmp exitFromExtended
+
        skipscrollup:
        cmp al, 0x11
        jne skipscrolldown
@@ -1163,6 +1239,7 @@ int9hisr:
        call scrolldown
        dec byte [currentScrollUp]
        jmp exitFromExtended
+       
        skipscrolldown:
        cmp al, 0x02
        jb exitFromExtended ; AL is less than 0x02, not a digit 
@@ -1253,29 +1330,28 @@ int9hisr:
                jmp far [cs:oldisr] 
 
 
-
-
 game:
-xor ax, ax
-mov es, ax
-mov ax, [es:9*4]
-mov [oldisr], ax
-mov ax, [es:9*4+2]
-mov [oldisr+2], ax
-cli
-mov word [es:9*4], int9hisr
-mov [es:9*4+2], cs
-sti
-call displayStartScreen
+    xor ax, ax
+    mov es, ax
+    mov ax, [es:9*4]
+    mov [oldisr], ax
+    mov ax, [es:9*4+2]
+    mov [oldisr+2], ax
+    cli
+    mov word [es:9*4], int9hisr
+    mov [es:9*4+2], cs
+    sti
+    call displayStartScreen
 
 
 
 start:
-cmp byte [mistakes], 3
-jne start
+    cmp byte [mistakes], 3
+    je displayEndScreenLose
+    jne start
 
-call clrscr
-call displayEndScreen
+    call displayEndScreenWin
+
 
 end:
     mov ax, 4c00h
