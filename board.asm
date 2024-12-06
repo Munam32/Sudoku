@@ -7,7 +7,8 @@ mistake2: db '/3', 0
 mistakes: dw 0
 
 timer: db '00:00', 0
-score: db 'Score: 1000', 0
+score: db 'Score:', 0
+Score: db '0',0
 Hours: dw 0
 Minutes: dw 0
 
@@ -866,6 +867,7 @@ printCursor:
    pop es
    ret
 
+    
 display:
    push cx
 
@@ -897,7 +899,14 @@ display:
    push cx
    mov cx, 3;y
    push cx
-   push score
+   push score ; score edited
+   call printString
+
+   mov cx, 42;x
+   push cx
+   mov cx, 3;y
+   push cx
+   push Score ; score edited
    call printString
 
    mov cx, 70;x
@@ -1271,6 +1280,7 @@ int9hisr:
        jne digit2
        mov byte [numbers+bx], 1
        jmp exitInputValue
+       
        digit2:
        cmp al, 0x03          
        jne digit3
@@ -1316,7 +1326,8 @@ int9hisr:
            cmp ah, byte [numbers+bx]
            je continueExit
            add byte [mistakes], 1
-           continueExit:
+
+           continueExitWithMistake:
                call display
                pop  es 
                pop  ds 
@@ -1327,7 +1338,22 @@ int9hisr:
                pop  cx 
                pop  bx 
                pop  ax 
-               jmp far [cs:oldisr] 
+               jmp far [cs:oldisr]
+
+            continueExit:
+                inc byte [Score]
+                call display
+               pop  es 
+               pop  ds 
+               pop  bp 
+               pop  di 
+               pop  si 
+               pop  dx 
+               pop  cx 
+               pop  bx 
+               pop  ax 
+               jmp far [cs:oldisr]
+
 
 
 game:
